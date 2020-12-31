@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/camera"
+        android:orderInCategory="100"
+        android:title="Camera on_off"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/surface"
+        android:orderInCategory="100"
+        android:title="Re-attach surfaсe"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_edit_material"
+        android:orderInCategory="100"
+        android:title="Show material panel"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/res_native"
+        android:orderInCategory="100"
+        android:title="Res_native"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/res_1080"
+        android:orderInCategory="100"
+        android:title="Res_1080"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/res_720"
+        android:orderInCategory="100"
+        android:title="Res_720"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/res_sd"
+        android:orderInCategory="100"
+        android:title="Res_sd"
+        app:showAsAction="never"/>
+
+</menu>

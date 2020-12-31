@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.MainActivity">
+
+    <LinearLayout
+        android:id="@+id/material_controls"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="1dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <SeekBar
+            android:id="@+id/material_metallic"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <SeekBar
+            android:id="@+id/material_roughness"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <SeekBar
+            android:id="@+id/material_clearcoat"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+    </LinearLayout>
+
+    <SurfaceView
+        android:id="@+id/render_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:background="#4DFFFFFF"
+        android:elevation="1dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Spinner
+            android:id="@+id/environment"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Spinner
+            android:id="@+id/color"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <Spinner
+            android:id="@+id/mesh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <CheckBox
+            android:id="@+id/material_object"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Turn Material on object" />
+
+        <CheckBox
+            android:id="@+id/material_camera"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Turn Material on camera" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

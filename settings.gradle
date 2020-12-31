@@ -1,0 +1,2 @@
+include ':app_filament_980'
+rootProject.name = "Filament Pure C++ Example"
