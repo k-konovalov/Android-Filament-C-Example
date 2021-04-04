@@ -1,4 +1,4 @@
-# Android-Filament-C-Example
+# Android Filament C++ Example
 Alternative for official Java use - almost pure C++ Example
 
 Before use, change path to filament framework dir in app level build.gradle:
