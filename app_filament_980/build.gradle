@@ -5,13 +5,12 @@ plugins {
 
 android {
     namespace = "ru.arvrlab.hardcoreFilament"
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
 
     defaultConfig {
         applicationId "ru.arvrlab.hardcore_filament"
         minSdkVersion 23
-        targetSdkVersion 30
+        compileSdk 34
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
 
