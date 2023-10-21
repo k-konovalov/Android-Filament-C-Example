@@ -1,0 +1,3 @@
+[submodule "filament/filament"]
+	path = filament/filament
+	url = https://github.com/google/filament
