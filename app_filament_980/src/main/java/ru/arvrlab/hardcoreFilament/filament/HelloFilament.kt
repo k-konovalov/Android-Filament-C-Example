@@ -12,9 +12,8 @@ object HelloFilament {
 
     external fun init(msaaSampleCount: Int, sharedContext: Long, useSurfaceTexture: Boolean)
 
-    external fun loadIbl(assets: AssetManager?, name: String?)
+    external fun loadLight()
     external fun loadMesh(assets: AssetManager?, name: String?)
-    external fun loadGlbModel(assets: AssetManager?, name: String?)
     external fun loadGlbModelWith(buffer: ByteBuffer?, remaining: Int)
     external fun resize(width: Int, height: Int)
     external fun destroy()

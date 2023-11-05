@@ -9,12 +9,10 @@ import ru.arvrlab.hardcoreFilament.filament.HelloFilament
 import ru.arvrlab.hardcoreFilament.filament.Material
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.util.HashMap
-import kotlin.jvm.Throws
 
 class MainViewModel: ViewModel() {
-    fun loadEnvironment(assets: AssetManager, env: String) {
-        HelloFilament.loadIbl(assets, "env/$env")
+    fun loadEnvironment() {
+        HelloFilament.loadLight()
     }
 
     fun loadMesh(assets: AssetManager, mesh: String) {
@@ -35,7 +33,6 @@ class MainViewModel: ViewModel() {
             buffer,
             buffer.remaining()
         )
-        //HelloFilament.loadGlbModel(assets, "models/$model")//..path)//
     }
 
     @Throws(IOException::class, XmlPullParserException::class)

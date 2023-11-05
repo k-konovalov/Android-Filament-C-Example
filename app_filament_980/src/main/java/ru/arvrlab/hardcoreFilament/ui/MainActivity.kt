@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         renderView?.doOnLayout {
-            viewModel.loadEnvironment(assets, "")
+            viewModel.loadEnvironment()
             viewModel.loadModel(assets, "cube_1m_centered.glb")
             HelloFilament.updateTransform()
             /*AssetReader.getFileFromAssets(applicationContext, "wolf_centered_3.glb", "models/")
@@ -322,7 +322,7 @@ class MainActivity : AppCompatActivity() {
                     id: Long
                 ) {
                     val env = parent.adapter.getItem(position).toString()
-                    viewModel.loadEnvironment(assets, env)
+                    viewModel.loadEnvironment()
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
