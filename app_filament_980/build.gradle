@@ -17,9 +17,8 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-frtti -fexceptions"
-                arguments "-DANDROID_ARM_NEON=TRUE",'-DANDROID_STL=c++_shared'
+                arguments '-DANDROID_STL=c++_shared'
                 arguments "-DFILAMENT_OFFICIAL_REPO_DIR=" + rootDir.path + "/filament/filament"
-                arguments "-DLIB_DIR=" + project.projectDir.path + "/src/main/cpp"
                 arguments "-DFILAMENT_DIR=" + project.projectDir.path + "/src/main/cpp/filament"
             }
         }

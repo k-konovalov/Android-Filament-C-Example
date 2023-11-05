@@ -28,42 +28,43 @@
 #include <android/asset_manager_jni.h>
 #include <android/log.h>
 
+// #include "filamentapp/IBL.h"
+#include <filamat/MaterialBuilder.h>
 #include <filament/Box.h>
 #include <filament/Camera.h>
 #include <filament/Color.h>
-#include <filament/VertexBuffer.h>
 #include <filament/Engine.h>
 #include <filament/Fence.h>
 #include <filament/IndexBuffer.h>
+#include <filament/IndirectLight.h>
+#include <filament/LightManager.h>
 #include <filament/Material.h>
 #include <filament/MaterialInstance.h>
-#include <filamat/MaterialBuilder.h>
-#include <filament/LightManager.h>
 #include <filament/RenderableManager.h>
-#include <filament/TransformManager.h>
 #include <filament/Renderer.h>
 #include <filament/Scene.h>
+#include <filament/Skybox.h>
 #include <filament/Stream.h>
 #include <filament/SwapChain.h>
-#include <filament/View.h>
 #include <filament/Texture.h>
-#include <filament/Skybox.h>
 #include <filament/TextureSampler.h>
+#include <filament/TransformManager.h>
+#include <filament/VertexBuffer.h>
+#include <filament/View.h>
 #include <filament/Viewport.h>
-#include <filament/IndirectLight.h>
 
 #include <math/mat4.h>
 #include <math/vec3.h>
 
 #include <utils/EntityManager.h>
+#include "utils/JobSystem.h"
 #include <gltfio/MaterialProvider.h>
 #include <gltfio/ResourceLoader.h>
 #include <gltfio/AssetLoader.h>
 #include <math/mat2.h>
 
-#include "filament/includes/ibl/IBL.h"
-#include "android/Path.h"
-#include "android/NioUtils.h"
+#include "common/NioUtils.h"
+#include "utils/Path.h"
 
 #include "stb_image.h"
 
@@ -88,15 +89,11 @@ static Renderer* g_renderer = nullptr;
 static SwapChain* g_swapChain = nullptr;
 static Stream* g_camera_stream = nullptr;
 
-
 static const Material* g_default_material = nullptr;
 static MaterialInstance* g_default_mi = nullptr;
 
 static const Material* g_textured_material = nullptr;
 static MaterialInstance* g_textured_mi = nullptr;
-
-static const Material* g_camera_material = nullptr;
-static MaterialInstance* g_camera_mi = nullptr;
 
 static Scene* g_scene = nullptr;
 gltfio::FilamentAsset* filamentAsset;
@@ -106,10 +103,13 @@ static Entity g_light1;
 static Entity g_light2;
 static Entity g_light3;
 static Entity g_light4;
-static IBL* g_ibl = nullptr;
+// static IBL* g_ibl = nullptr;
 
 static View* g_view = nullptr;
-static Camera* g_camera = nullptr;
+static Entity g_camera_entity;
+static const Material* g_camera_material = nullptr;
+static MaterialInstance* g_camera_mi = nullptr;
+static Camera* g_camera;
 
 struct Mesh;
 static constexpr size_t MESH_COUNT = 1;
@@ -194,45 +194,7 @@ static std::ifstream::pos_type getFileSize(const char* filename) {
 extern "C" {
 
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadIbl(JNIEnv *env, jclass type,
-                                                              jobject assets, jstring name_) {
-/*
-    AAssetManager *assetManager = AAssetManager_fromJava(env, assets);
-    const char *name = env->GetStringUTFChars(name_, 0);
-
-    // IBL
-
-    if (g_ibl) {
-        g_scene->setIndirectLight(nullptr);
-        g_scene->setSkybox(nullptr);
-        delete g_ibl;
-        g_ibl = nullptr;
-    }
-
-    g_ibl = new IBL(*g_engine);
-    bool isLoadSuccess = g_ibl->loadFromDirectory(assetManager, name);
-    if (!isLoadSuccess) {
-        delete g_ibl;
-        g_ibl = nullptr;
-    }
-
-    *//*const IndirectLight *ibl = Skybox::Builder()
-            .irradiance(3, math::float3(0,0,0))
-            .intensity(30000)
-            .build(*g_engine);*//*
-
-    Skybox *skybox = Skybox::Builder()
-            .color({ 0.10, 0.125, 0.25, 1.0 })
-            .intensity(100000.0)
-            .build(*g_engine);
-
-    //if (g_ibl) {
-        //g_scene->setIndirectLight(ibl);//(g_ibl->getIndirectLight());
-        g_scene->setSkybox(skybox);//g_ibl->getSkybox());
-    //}
-
-    env->ReleaseStringUTFChars(name_, name);*/
-
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadLight(JNIEnv *env, jobject type) {
     auto& em = utils::EntityManager::get();
     g_light = em.create();
     LightManager::Builder(LightManager::Type::SUN)
@@ -245,46 +207,9 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadIbl(JNIEnv *env, jcl
     g_scene->addEntity(g_light);
 }
 
-JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadGlbModel(JNIEnv *env, jclass type,
-                                                                jobject assets, jstring assetName) {
-    /**Grisha way*/
-    /*
-        Path filename(path);
-
-        long contentSize = static_cast<long>(getFileSize(filename.c_str()));
-
-        std::ifstream in(filename.c_str(), std::ifstream::binary | std::ifstream::in);
-
-        std::vector<uint8_t> buffer(static_cast<unsigned long>(contentSize));
-
-        if (!in.read((char*) buffer.data(), contentSize))
-        {
-            std::cerr << "Unable to read " << filename << std::endl;
-            exit(1);
-        }
-
-        gltfio::MaterialProvider* materialProvider = gltfio::createMaterialGenerator(g_engine);
-        gltfio::AssetLoader* assetLoader = gltfio::AssetLoader::create({
-                                                                               g_engine, materialProvider, nullptr
-                                                                       });
-        gltfio::FilamentAsset* asset = assetLoader->createAssetFromBinary(buffer.data(), static_cast<uint32_t>(contentSize));
-
-        buffer.clear();
-        buffer.shrink_to_fit();
-
-        gltfio::ResourceLoader({.engine = g_engine, .normalizeSkinningWeights = false, .recomputeBoundingBoxes = false})
-            .loadResources(asset);
-
-        env->ReleaseStringUTFChars(assetName, path);
-     */
-
-
-}
-
 extern "C"
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadGlbModelWith(JNIEnv *env, jclass clazz, jobject buffer, jint remaining) {
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadGlbModelWith(JNIEnv *env, jobject clazz, jobject buffer, jint remaining) {
     // TODO: implement loadGlbModelWith()
     if (filamentAsset && currentModel) {
         filamentAsset->releaseSourceData();
@@ -294,61 +219,18 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_loadGlbModelWith(JNIEnv 
     }
 
     //Create Asset Loader
-    gltfio::MaterialProvider* materialProvider = gltfio::createUbershaderLoader(g_engine);
+    gltfio::MaterialProvider* materialProvider = gltfio::createJitShaderProvider(g_engine); // or createUbershaderProvider
     AssetLoader* loader = gltfio::AssetLoader::create({g_engine, materialProvider, nullptr});
 
     //Transofrm Buffer to Entities
     AutoBuffer buffer_auto(env, buffer, remaining);
-    filamentAsset = loader->createAssetFromBinary((const uint8_t *) buffer_auto.getData(), buffer_auto.getSize());
-    gltfio::ResourceLoader({.engine = g_engine, .normalizeSkinningWeights = false, .recomputeBoundingBoxes = false})
+    filamentAsset = loader->createAsset((const uint8_t *) buffer_auto.getData(), buffer_auto.getSize());
+    gltfio::ResourceLoader({.engine = g_engine, .normalizeSkinningWeights = false})
             .loadResources(filamentAsset);
 
     currentModel = filamentAsset->getEntities()[0];
     g_scene->addEntity(currentModel);// One model
     //g_scene->addEntities(filamentAsset->getEntities(), filamentAsset->getEntityCount()); //Multiply model
-
-    /*
-    AAssetManager *assetManager = AAssetManager_fromJava(env, assets);
-    const char *path = env->GetStringUTFChars(assetName, 0);
-
-    Path modelPath(path);
-    AAsset* asset = AAssetManager_open(assetManager, modelPath.getPath().c_str(), AASSET_MODE_RANDOM);
-    if (asset) {
-        AAsset* albedo = nullptr;
-        AAsset* metallic = nullptr;
-        AAsset* roughness = nullptr;
-        AAsset* normal = nullptr;
-
-        const void* data = AAsset_getBuffer(asset);
-        if (data) {
-            //destroyMeshes();
-            Mesh* mesh = decodeMesh(data, 0, g_textured_mi);
-            gltfio::AssetLoader* assetLoader = gltfio::AssetLoader::create({
-                                                                                   g_engine, materialProvider, nullptr
-                                                                           });
-
-            gltfio::FilamentAsset* asset = assetLoader->createAssetFromBinary(data, static_cast<uint32_t>(contentSize));
-            if(mesh != nullptr) {
-                g_meshes.push_back(mesh);
-                g_scene->addEntity(mesh->renderable);
-            }
-
-            // now load textures...
-            const Path p(path);
-            TextureSampler sampler(TextureSampler::MagFilter::LINEAR, TextureSampler::WrapMode::CLAMP_TO_EDGE);
-            setParameterFromAsset(&mesh->textures[0], assetManager, p, "albedo", sampler, Texture::InternalFormat::SRGB8_A8);
-            setParameterFromAsset(&mesh->textures[1], assetManager, p, "metallic", sampler, Texture::InternalFormat::R8);
-            setParameterFromAsset(&mesh->textures[2], assetManager, p, "roughness", sampler, Texture::InternalFormat::R8);
-            setParameterFromAsset(&mesh->textures[3], assetManager, p, "normal", sampler, Texture::InternalFormat::RGBA8);
-            setParameterFromAsset(&mesh->textures[4], assetManager, p, "ao", sampler, Texture::InternalFormat::R8);
-}
-
-        Fence::waitAndDestroy(g_engine->createFence());
-        AAsset_close(asset);
-    }
-    env->ReleaseStringUTFChars(assetName, path);
-*/
-
 }
 
 void setParameterFromAsset(Texture **texture, AAssetManager *assetManager, const Path &path,
@@ -540,7 +422,7 @@ JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_i
             .shading(MaterialBuilder::Shading::UNLIT)
             .targetApi(MaterialBuilder::TargetApi::OPENGL)
             .platform(MaterialBuilder::Platform::MOBILE)
-            .build();
+            .build(g_engine->getJobSystem());
 
     if (default_material.isValid()) {
         std::cout << "Success!" << std::endl;
@@ -593,6 +475,7 @@ JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_i
     u_int32_t height = 720;
 
     // Create a camera looking at the origin
+    g_camera_entity = em.create();
     g_camera = g_engine->createCamera(em.create());
 
     // Create a view that takes up the entire window
@@ -631,17 +514,15 @@ JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_d
         JNIEnv* env, jobject type) {
     LOGD(">>> Destroy");
 
-    delete g_ibl;
-
     destroyMeshes();
 
     g_engine->destroy(g_default_mi);
     g_engine->destroy(g_default_material);
     g_engine->destroy(g_textured_mi);
     g_engine->destroy(g_textured_material);
+    g_engine->destroyCameraComponent(g_camera_entity);
     g_engine->destroy(g_camera_mi);
     g_engine->destroy(g_camera_material);
-    g_engine->destroy(g_camera);
     g_engine->destroy(g_scene);
     g_engine->destroy(g_view);
     g_engine->destroy(g_camera_stream);
@@ -659,14 +540,13 @@ JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_d
     g_default_material = nullptr;
     g_textured_mi = nullptr;
     g_textured_material = nullptr;
+    g_camera = nullptr;
     g_camera_mi = nullptr;
     g_camera_material = nullptr;
     g_camera = nullptr;
     g_scene = nullptr;
     g_view = nullptr;
     g_camera_stream = nullptr;
-
-    g_ibl = nullptr;
 
     auto& em = EntityManager::get();
     em.destroy(g_light);
@@ -680,7 +560,7 @@ JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_d
 }
 
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setSwapChain(JNIEnv *env, jclass type,
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setSwapChain(JNIEnv *env, jobject type,
                                                                    jobject nativeWindow) {
     if (g_swapChain) {
         g_engine->destroy(g_swapChain);
@@ -691,7 +571,7 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setSwapChain(JNIEnv *env
 }
 
 JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_render(
-        JNIEnv *env, jclass type, jboolean objectRotation, jboolean cameraRotation) {
+        JNIEnv *env, jobject type, jboolean objectRotation, jboolean cameraRotation) {
 
     if (!currentModel)
     {
@@ -731,14 +611,14 @@ JNIEXPORT void JNICALL Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_r
 }
 
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_finish(JNIEnv *env, jclass type) {
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_finish(JNIEnv *env, jobject type) {
     if (g_engine) { // engine may have been destroyed already
         Fence::waitAndDestroy(g_engine->createFence());
     }
 }
 
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateMaterial(JNIEnv *env, jclass type,
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateMaterial(JNIEnv *env, jobject type,
         jfloat metallic, jfloat roughness, jfloat clearCoat) {
 
     MaterialInstance *mi = g_camera_stream ? g_camera_mi : g_default_mi;
@@ -748,7 +628,7 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateMaterial(JNIEnv *e
 }
 
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateMaterialAlbedo(JNIEnv *env, jclass type,
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateMaterialAlbedo(JNIEnv *env, jobject type,
         jfloat r, jfloat g, jfloat b) {
 
     MaterialInstance *mi = g_default_mi;
@@ -757,7 +637,7 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateMaterialAlbedo(JNI
 
 JNIEXPORT void JNICALL
 Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setCameraStream(
-        JNIEnv *env, jclass type, jobject st) {
+        JNIEnv *env, jobject type, jobject st) {
 
     if (g_camera_stream) {
         g_engine->destroy(g_camera_stream);
@@ -776,9 +656,9 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setCameraStream(
             rcm.getInstance(g_meshes[0]->renderable), 0, st ? g_camera_mi : g_default_mi);
 }
 
-};
+
 extern "C" JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setCameraStreamWithTexture(JNIEnv *env, jclass type,
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setCameraStreamWithTexture(JNIEnv *env, jobject type,
         jlong cameraTexture, jint width, jint height) {
     if (g_camera_stream) {
         g_engine->destroy(g_camera_stream);
@@ -787,7 +667,7 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setCameraStreamWithTextu
 
     if (cameraTexture) {
         g_camera_stream = Stream::Builder()
-                .stream(cameraTexture)
+                .stream(reinterpret_cast<void *>(cameraTexture))
                 .width((uint32_t) width)
                 .height((uint32_t) height)
                 .build(*g_engine);
@@ -797,10 +677,12 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_setCameraStreamWithTextu
 
     auto& rcm = g_engine->getRenderableManager();
     rcm.setMaterialInstanceAt(
-            rcm.getInstance(g_meshes[0]->renderable), 0, cameraTexture ? g_camera_mi : g_default_mi);}
+            rcm.getInstance(g_meshes[0]->renderable), 0, cameraTexture ? g_camera_mi : g_default_mi);
+}
+
 extern "C"
 JNIEXPORT void JNICALL
-Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateTransform(JNIEnv *env, jclass clazz) {
+Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateTransform(JNIEnv *env, jobject clazz) {
     /* Kotlin Base Code
         val tm = engine.transformManager
         var center = asset.boundingBox.center.let { v-> Float3(v[0], v[1], v[2]) }
@@ -847,8 +729,6 @@ Java_ru_arvrlab_hardcoreFilament_filament_HelloFilament_updateTransform(JNIEnv *
 
         auto camPos = g_camera->getPosition();
         auto camProjMat = g_camera->getProjectionMatrix();
-        camPos;
-        camProjMat;
 
     }
-}
+}}

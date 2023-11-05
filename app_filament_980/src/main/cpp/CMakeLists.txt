@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
 project(filament)
 
-add_library(hello_filament SHARED hello_filament.cpp ${FILAMENT_DIR}/cpp/IBL.cpp ${FILAMENT_DIR}/cpp/MaterialGenerator.cpp ${LIB_DIR}/android/Path.cpp ${LIB_DIR}/android/CallbackUtils.cpp ${LIB_DIR}/android/NioUtils.cpp)
+add_library(
+        hello_filament SHARED hello_filament.cpp
+        ## Android
+        ${FILAMENT_OFFICIAL_REPO_DIR}/android/common/NioUtils.cpp
+        ${FILAMENT_OFFICIAL_REPO_DIR}/android/common/CallbackUtils.cpp
+        ${FILAMENT_OFFICIAL_REPO_DIR}/libs/utils/src/Path.cpp
+        ## MaterialGenerator (replaced by JitShaderProvider)
+        ${FILAMENT_OFFICIAL_REPO_DIR}/libs/gltfio/src/JitShaderProvider.cpp
+)
 set_property(TARGET hello_filament PROPERTY CXX_STANDARD 17)
 
 #Find Android Native Log lib with others libs
@@ -9,10 +17,33 @@ find_library(log-lib log)
 find_library(android-lib android)
 
 #Find .h files
-include_directories(${FILAMENT_DIR}/includes)
+## Fund filament .h. libs
+##
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/filament/backend/include/)
+## filament
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/filament/include/)
+## Find libs .h files
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/camutils/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/filabridge/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/filamat/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/filamentapp/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/filameshio/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/geometry/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/gltfio/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/ibl/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/iblprefilter/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/image/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/ktxreader/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/math/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/mathio/include/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/libs/utils/include/)
+## Find third_party .h files
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/third_party/hat-trie/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/third_party/robin-map/)
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/third_party/basisu/transcoder/)
 include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/third_party/stb/)
-include_directories(${LIBDIR}/android)
-
+## Find android .h files
+include_directories(${FILAMENT_OFFICIAL_REPO_DIR}/android/)
 
 #Add .so / .a libs
 add_library(lib_filamat SHARED IMPORTED)
